@@ -10,8 +10,8 @@ class Login extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      username: '',
-      password: ''
+      username: "",
+      password: "",
     };
   }
 
@@ -20,28 +20,35 @@ class Login extends React.Component {
   login = () => {
     const pwd = bcrypt.hashSync(this.state.password, salt);
 
-    axios.post('http://localhost:2000/login', {
-      username: this.state.username,
-      password: pwd,
-    }).then((res) => {
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user_id', res.data.id);
-      // this.props.history.push('/dashboard');
-      this.props.navigate("/dashboard");
-    }).catch((err) => {
-      if (err.response && err.response.data && err.response.data.errorMessage) {
-        swal({
-          text: err.response.data.errorMessage,
-          icon: "error",
-          type: "error"
-        });
-      }
-    });
-  }
+    axios
+      .post("http://localhost:2000/login", {
+        username: this.state.username,
+        password: pwd,
+      })
+      .then((res) => {
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("user_id", res.data.id);
+        // this.props.history.push('/dashboard');
+        this.props.navigate("/UploadFile");
+      })
+      .catch((err) => {
+        if (
+          err.response &&
+          err.response.data &&
+          err.response.data.errorMessage
+        ) {
+          swal({
+            text: err.response.data.errorMessage,
+            icon: "error",
+            type: "error",
+          });
+        }
+      });
+  };
 
   render() {
     return (
-      <div style={{ marginTop: '200px' }}>
+      <div style={{ marginTop: "200px" }}>
         <div>
           <h2>Login</h2>
         </div>
@@ -57,7 +64,8 @@ class Login extends React.Component {
             placeholder="User Name"
             required
           />
-          <br /><br />
+          <br />
+          <br />
           <TextField
             id="standard-basic"
             type="password"
@@ -68,17 +76,19 @@ class Login extends React.Component {
             placeholder="Password"
             required
           />
-          <br /><br />
+          <br />
+          <br />
           <Button
             className="button_style"
             variant="contained"
             color="primary"
             size="small"
-            disabled={this.state.username == '' && this.state.password == ''}
+            disabled={this.state.username == "" && this.state.password == ""}
             onClick={this.login}
           >
             Login
-          </Button> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          </Button>{" "}
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
           <Link
             // href="/register"
             component="button"

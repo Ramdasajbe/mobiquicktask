@@ -7,7 +7,26 @@ var multer = require("multer"),
   bodyParser = require("body-parser"),
   path = require("path");
 var mongoose = require("mongoose");
-mongoose.connect("mongodb://localhost/productDB");
+try {
+  mongoose
+    .connect(
+      "mongodb+srv://ajberamdas7:Ramdas123@cluster0.1i4ejmh.mongodb.net/",
+      {
+        useNewUrlParser: true,
+        useCreateIndex: true,
+        useFindAndModify: false,
+      }
+    )
+    .then(() => {
+      console.log(`connection to database established`);
+    })
+    .catch((err) => {
+      console.log(`db error ${err.message}`);
+      process.exit(-1);
+    });
+
+  mongoose.set("useUnifiedTopology", true);
+} catch (error) {}
 var fs = require("fs");
 var product = require("./model/product.js");
 var user = require("./model/user.js");
@@ -184,20 +203,12 @@ function checkUserAndGenerateToken(data, req, res) {
 /* Api to add Product */
 app.post("/add-product", upload.any(), (req, res) => {
   try {
-    if (
-      req.files &&
-      req.body &&
-      req.body.name &&
-      req.body.desc &&
-      req.body.uniqueykey &&
-      req.body.discount
-    ) {
+    if (req.files && req.body) {
       let new_product = new product();
-      new_product.name = req.body.name;
-      new_product.desc = req.body.desc;
-      new_product.uniqueykey = req.body.uniqueykey;
+
       new_product.image = req.files[0].filename;
-      new_product.discount = req.body.discount;
+
+      new_product.uniqueykey = Math.floor(Math.random() * 900000) + 100000;
       new_product.user_id = req.user.id;
       new_product.save((err, data) => {
         if (err) {
@@ -225,19 +236,10 @@ app.post("/add-product", upload.any(), (req, res) => {
     });
   }
 });
-
 /* Api to update Product */
 app.post("/update-product", upload.any(), (req, res) => {
   try {
-    if (
-      req.files &&
-      req.body &&
-      req.body.name &&
-      req.body.desc &&
-      req.body.uniqueykey &&
-      req.body.id &&
-      req.body.discount
-    ) {
+    if (req.files && req.body && req.body.id) {
       product.findById(req.body.id, (err, new_product) => {
         // if file already exist than remove it
         if (
@@ -252,18 +254,6 @@ app.post("/update-product", upload.any(), (req, res) => {
 
         if (req.files && req.files[0] && req.files[0].filename) {
           new_product.image = req.files[0].filename;
-        }
-        if (req.body.name) {
-          new_product.name = req.body.name;
-        }
-        if (req.body.desc) {
-          new_product.desc = req.body.desc;
-        }
-        if (req.body.uniqueykey) {
-          new_product.uniqueykey = req.body.uniqueykey;
-        }
-        if (req.body.discount) {
-          new_product.discount = req.body.discount;
         }
 
         new_product.save((err, data) => {
@@ -332,190 +322,6 @@ app.post("/delete-product", (req, res) => {
 
 /*Api to get and search product with pagination and search by name*/
 app.get("/get-product", (req, res) => {
-  try {
-    var query = {};
-    query["$and"] = [];
-    query["$and"].push({
-      is_delete: false,
-      user_id: req.user.id,
-    });
-    if (req.query && req.query.search) {
-      query["$and"].push({
-        name: { $regex: req.query.search },
-      });
-    }
-    var perPage = 5;
-    var page = req.query.page || 1;
-    product
-      .find(query, {
-        date: 1,
-        name: 1,
-        id: 1,
-        desc: 1,
-        uniqueykey: 1,
-        discount: 1,
-        image: 1,
-      })
-      .skip(perPage * page - perPage)
-      .limit(perPage)
-      .then((data) => {
-        product
-          .find(query)
-          .count()
-          .then((count) => {
-            if (data && data.length > 0) {
-              res.status(200).json({
-                status: true,
-                title: "Product retrived.",
-                products: data,
-                current_page: page,
-                total: count,
-                pages: Math.ceil(count / perPage),
-              });
-            } else {
-              res.status(400).json({
-                errorMessage: "There is no product!",
-                status: false,
-              });
-            }
-          });
-      })
-      .catch((err) => {
-        res.status(400).json({
-          errorMessage: err.message || err,
-          status: false,
-        });
-      });
-  } catch (e) {
-    res.status(400).json({
-      errorMessage: "Something went wrong!",
-      status: false,
-    });
-  }
-});
-
-/* Api to add Product */
-app.post("/newadd-product", upload.any(), (req, res) => {
-  try {
-    if (req.files && req.body) {
-      let new_product = new product();
-
-      new_product.image = req.files[0].filename;
-
-      new_product.uniqueykey = Math.floor(Math.random() * 900000) + 100000;
-      new_product.user_id = req.user.id;
-      new_product.save((err, data) => {
-        if (err) {
-          res.status(400).json({
-            errorMessage: err,
-            status: false,
-          });
-        } else {
-          res.status(200).json({
-            status: true,
-            title: "Product Added successfully.",
-          });
-        }
-      });
-    } else {
-      res.status(400).json({
-        errorMessage: "Add proper parameter first!",
-        status: false,
-      });
-    }
-  } catch (e) {
-    res.status(400).json({
-      errorMessage: "Something went wrong!",
-      status: false,
-    });
-  }
-});
-/* Api to update Product */
-app.post("/newupdate-product", upload.any(), (req, res) => {
-  try {
-    if (req.files && req.body && req.body.id) {
-      product.findById(req.body.id, (err, new_product) => {
-        // if file already exist than remove it
-        if (
-          req.files &&
-          req.files[0] &&
-          req.files[0].filename &&
-          new_product.image
-        ) {
-          var path = `./uploads/${new_product.image}`;
-          fs.unlinkSync(path);
-        }
-
-        if (req.files && req.files[0] && req.files[0].filename) {
-          new_product.image = req.files[0].filename;
-        }
-
-        new_product.save((err, data) => {
-          if (err) {
-            res.status(400).json({
-              errorMessage: err,
-              status: false,
-            });
-          } else {
-            res.status(200).json({
-              status: true,
-              title: "Product updated.",
-            });
-          }
-        });
-      });
-    } else {
-      res.status(400).json({
-        errorMessage: "Add proper parameter first!",
-        status: false,
-      });
-    }
-  } catch (e) {
-    res.status(400).json({
-      errorMessage: "Something went wrong!",
-      status: false,
-    });
-  }
-});
-
-/* Api to delete Product */
-app.post("/newdelete-product", (req, res) => {
-  try {
-    if (req.body && req.body.id) {
-      product.findByIdAndUpdate(
-        req.body.id,
-        { is_delete: true },
-        { new: true },
-        (err, data) => {
-          if (data.is_delete) {
-            res.status(200).json({
-              status: true,
-              title: "Product deleted.",
-            });
-          } else {
-            res.status(400).json({
-              errorMessage: err,
-              status: false,
-            });
-          }
-        }
-      );
-    } else {
-      res.status(400).json({
-        errorMessage: "Add proper parameter first!",
-        status: false,
-      });
-    }
-  } catch (e) {
-    res.status(400).json({
-      errorMessage: "Something went wrong!",
-      status: false,
-    });
-  }
-});
-
-/*Api to get and search product with pagination and search by name*/
-app.get("/newget-product", (req, res) => {
   try {
     var query = {};
     query["$and"] = [];

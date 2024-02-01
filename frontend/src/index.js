@@ -5,7 +5,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Login from "./Login";
 import Register from "./Register";
-import Dashboard from "./Dashboard";
 import UploadFile from "./UploadFile";
 import "./Login.css";
 
@@ -14,7 +13,7 @@ ReactDOM.render(
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+
       <Route path="/UploadFile" element={<UploadFile />} />
     </Routes>
   </BrowserRouter>,

@@ -26,8 +26,12 @@ class UploadFile extends Component {
       token: "",
       openProductModal: false,
       openProductEditModal: false,
+      openProductDownloadModal: false,
+      downloadLink: "",
+      downloadUniqekey: "",
       id: "",
       name: "",
+      uniqueykey: "",
       desc: "",
       price: "",
       discount: "",
@@ -88,7 +92,7 @@ class UploadFile extends Component {
   deleteProduct = (id) => {
     axios
       .post(
-        "http://localhost:2000/newdelete-product",
+        "http://localhost:2000/delete-product",
         {
           id: id,
         },
@@ -149,7 +153,7 @@ class UploadFile extends Component {
     file.append("file", fileInput.files[0]);
 
     axios
-      .post("http://localhost:2000/newadd-product", file, {
+      .post("http://localhost:2000/add-product", file, {
         headers: {
           "content-type": "multipart/form-data",
           token: this.state.token,
@@ -184,7 +188,7 @@ class UploadFile extends Component {
     file.append("file", fileInput.files[0]);
 
     axios
-      .post("http://localhost:2000/newupdate-product", file, {
+      .post("http://localhost:2000/update-product", file, {
         headers: {
           "content-type": "multipart/form-data",
           token: this.state.token,
@@ -210,6 +214,29 @@ class UploadFile extends Component {
         });
         this.handleProductEditClose();
       });
+  };
+
+  downloadFile = async () => {
+    if (this.state.uniqueykey == this.state.downloadUniqekey) {
+      try {
+        const response = await fetch(this.state.downloadLink);
+        const blob = await response.blob();
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "downloaded_image.jpg";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        this.setState({ uniqueykey: "" });
+      } catch (error) {
+        this.setState({ uniqueykey: "" });
+        console.error("Error downloading image:", error.message);
+      }
+    } else {
+      this.setState({ uniqueykey: "" });
+      alert("Please Enter valid 6 digit code");
+    }
   };
 
   handleProductOpen = () => {
@@ -303,6 +330,54 @@ class UploadFile extends Component {
               autoFocus
             >
               Edit Product
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Download Product */}
+        <Dialog
+          open={this.state.openProductDownloadModal}
+          onClose={this.handleProductClose}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogTitle id="alert-dialog-title">Download File</DialogTitle>
+          <DialogContent>
+            <TextField
+              id="standard-basic"
+              type="text"
+              autoComplete="off"
+              name="uniqueykey"
+              value={this.state.uniqueykey}
+              onChange={this.onChange}
+              placeholder="Enter Unique key"
+              required
+            />
+            <br />
+
+            <br />
+          </DialogContent>
+
+          <DialogActions>
+            <Button
+              onClick={() =>
+                this.setState({
+                  openProductDownloadModal: false,
+                })
+              }
+              color="primary"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={
+                this.state.uniqueykey == "" || this.state.uniqueykey.length != 6
+              }
+              onClick={(e) => this.downloadFile()}
+              color="primary"
+              autoFocus
+            >
+              Download Product
             </Button>
           </DialogActions>
         </Dialog>
@@ -401,6 +476,21 @@ class UploadFile extends Component {
                       onClick={(e) => this.deleteProduct(row._id)}
                     >
                       Delete
+                    </Button>
+                    <Button
+                      className="button_style no-printme"
+                      variant="outlined"
+                      color="primary"
+                      size="small"
+                      onClick={(e) =>
+                        this.setState({
+                          openProductDownloadModal: true,
+                          downloadLink: `http://localhost:2000/${row.image}`,
+                          downloadUniqekey: row.uniqueykey,
+                        })
+                      }
+                    >
+                      Download
                     </Button>
                   </TableCell>
                 </TableRow>
